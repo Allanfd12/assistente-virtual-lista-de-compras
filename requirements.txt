@@ -1,0 +1,7 @@
+transformers
+torchaudio
+pyserial
+pyaudio
+django
+torch  
+nltk

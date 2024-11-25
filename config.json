@@ -1,0 +1,58 @@
+{
+    "acoes": [
+        {
+            "nome": "ligar",
+            "objetos": [
+                "lâmpada",
+                "televisão"
+            ]
+        },
+        {
+            "nome": "desligar",
+            "objetos": [
+                "lâmpada",
+                "televisão"
+            ]
+        },
+        {
+            "nome": "acender",
+            "objetos": [
+                "lâmpada"
+            ]
+        },
+        {
+            "nome": "apagar",
+            "objetos": [
+                "lâmpada"
+            ]
+        },
+        {
+            "nome": "aumentar",
+            "objetos": [
+                "luminosidade",
+                "volume",
+                "temperatura"
+            ]
+        },
+        {
+            "nome": "diminuir",
+            "objetos": [
+                "luminosidade",
+                "volume",
+                "temperatura"
+            ]
+        },
+        {
+            "nome": "tocar",
+            "objetos": [
+                "música"
+            ]
+        },
+        {
+            "nome": "parar",
+            "objetos": [
+                "música"
+            ]
+        }               
+    ]
+}
