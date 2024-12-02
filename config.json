@@ -1,58 +1,36 @@
 {
+
+
     "acoes": [
         {
-            "nome": "ligar",
-            "objetos": [
-                "lâmpada",
-                "televisão"
-            ]
+            "identificador": "adicionar",
+            "nome": "Adicionar item a lista",            
+            "descricao": "Adiciona um item a lista de compras",
+            "comando": "adicionar"
         },
         {
-            "nome": "desligar",
-            "objetos": [
-                "lâmpada",
-                "televisão"
-            ]
+            "identificador": "remover",
+            "nome": "remover item da lista",
+            "descricao": "Remove um item da lista de compras",
+            "comando": "remover"
         },
         {
-            "nome": "acender",
-            "objetos": [
-                "lâmpada"
-            ]
+            "identificador": "mostrar",
+            "nome": "mostrar lista",
+            "descricao": "Mostra a lista de compras",
+            "comando": "mostrar"
         },
         {
-            "nome": "apagar",
-            "objetos": [
-                "lâmpada"
-            ]
+            "identificador": "apagar",
+            "nome": "apagar lista",
+            "descricao": "Apaga a lista de compras",
+            "comando": "apagar"
         },
         {
-            "nome": "aumentar",
-            "objetos": [
-                "luminosidade",
-                "volume",
-                "temperatura"
-            ]
-        },
-        {
-            "nome": "diminuir",
-            "objetos": [
-                "luminosidade",
-                "volume",
-                "temperatura"
-            ]
-        },
-        {
-            "nome": "tocar",
-            "objetos": [
-                "música"
-            ]
-        },
-        {
-            "nome": "parar",
-            "objetos": [
-                "música"
-            ]
-        }               
-    ]
+            "identificador": "criar",
+            "nome": "criar lista",
+            "descricao": "Cria uma nova lista de compras",
+            "comando": "criar"
+        }
+    ]        
 }

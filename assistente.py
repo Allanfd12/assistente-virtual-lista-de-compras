@@ -7,6 +7,7 @@ import secrets
 import pyaudio
 import wave
 import time
+import json
 
 import os
 
@@ -16,8 +17,8 @@ FORMATO = pyaudio.paInt16
 CANAIS = 1
 TEMPO_DE_GRAVACAO = 5
 IDIOMA_CORPUS = "portuguese"
-CAMINHO_AUDIO_FALA = "C:/Users/allan/Documents/GIT/AULA IA/aula 5/temp/"
-CONFIGURACAO = "C:/Users/allan/Documents/GIT/AULA IA/aula 5/config.json"
+CAMINHO_AUDIO_FALA = "C:/Users/allan/Documents/GIT/AULA IA/assistente virtual lista de compras/temp/"
+CONFIGURACAO = "C:/Users/allan/Documents/GIT/AULA IA/assistente virtual lista de compras/config.json"
 SILENCIO_LIMIAR = 500  # Limiar para considerar como silêncio
 TEMPO_MAXIMO = 60  # Limite máximo de captura (segundos)
 TEMPO_ESPERA_SILENCIO = 1.0  # Tempo de espera em segundos antes de transcrever
@@ -27,12 +28,15 @@ def iniciar(dispositivo):
     gravador = pyaudio.PyAudio()
 
     assistente_iniciado, processador, modelo = iniciar_modelo(MODELOS[0], dispositivo)
-    palavras_de_parada = None
+    palavras_de_parada, acoes = None , None
     if assistente_iniciado:
         palavras_de_parada = corpus.stopwords.words(IDIOMA_CORPUS)
         
+        with open(CONFIGURACAO, "r") as arquivo_configuracao:
+            configuracao = json.load(arquivo_configuracao)
+            acoes = configuracao["acoes"]
 
-    return assistente_iniciado, processador, modelo, gravador, palavras_de_parada
+    return assistente_iniciado, processador, modelo, gravador, palavras_de_parada, acoes
 
 
 
@@ -226,16 +230,89 @@ def capturar_e_transcrever(dispositivo, modelo, processador):
         stream.close()
         gravador.terminate()
         
+def validar_comando(acoes, comando,palavras_de_parada, lista):
+    texto = remover_comando_wake_up(comando)
+    comando = separar_comando_e_remover_palavras_parada(texto,palavras_de_parada)
+    
+    for acao in acoes:
+        if acao["comando"] == comando[0]:
+            return executar_acao(acao,get_objeto_comando(texto), lista) 
+    print(f"comando {texto[0]} não reconhecido")
+    
+    
+
+def executar_acao(acao,comando, lista):
+    match acao["identificador"]:
+        case "adicionar":
+            lista.append(comando)
+            print(f"item {comando} adicionado a lista de compras")
+            return
+        case "remover":
+            if comando in lista:
+                lista.remove(comando)
+                print(f"item {comando} removido da lista de compras")
+            else:
+                print(f"item {comando} não encontrado na lista de compras")
+            return
+        case "mostrar":
+            if len(lista) == 0:
+                print(f"lista de compras vazia")
+                return
+            print(f"esses são os items da lista de compras:")
+            for item in lista:
+                print(f"item: {item}")
+            return
+        case "apagar":
+            lista.clear()
+            print(f"a lsita de compras foi apagada")
+            return
+        case "criar":
+            lista = []
+            print(f"A lista de compras foi criada")
+            return
+    
+      
+def remover_comando_wake_up(texto):
+    #remover primeira palavra
+    texto = texto.split(" ", 1)[1]
+    texto = texto.strip()
+    return texto
+
+def get_objeto_comando(texto):
+    texto = texto.split(" ", 1)
+    if len(texto) > 1:
+        return texto[1]
+    return ""
+    
+
+def separar_comando_e_remover_palavras_parada(texto,palavras_de_parada):
+    comando = []
+    
+    tokens = word_tokenize(texto)
+    for token in tokens:
+        if token not in palavras_de_parada:
+            comando.append(token)
+
+    return comando
+        
+        
+        
 if __name__ == "__main__":
     dispositivo = "cuda:0" if torch.cuda.is_available() else "cpu"
-    
-    iniciado, processador, modelo, gravador, palavra_parada = iniciar(dispositivo)
+    lista_de_compras = []
+    iniciado, processador, modelo, gravador, palavra_parada, acoes = iniciar(dispositivo)
     if iniciado:
         while True:
-            acao = capturar_e_transcrever(dispositivo, modelo, processador)
-            print(f"ação a ser executada: {acao}")
+            comando = capturar_e_transcrever(dispositivo, modelo, processador)
+            print(f"ação a ser executada: {comando}")
+            print(f"ação a ser executada: {remover_comando_wake_up(comando)}")
+            validar_comando(acoes, comando,palavra_parada, lista_de_compras)
+            
             #print(f"atuação a ser executada: {atuacao}")
             #atuar_sobre_lampada(atuacao, porta_lampada)
            
+
+
+
 
 
