@@ -1,6 +1,7 @@
 transformers
 torchaudio
 pyserial
+PySoundFile
 pyaudio
 django
 torch  
