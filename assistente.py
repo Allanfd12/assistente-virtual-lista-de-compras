@@ -17,7 +17,7 @@ FORMATO = pyaudio.paInt16
 CANAIS = 1
 TEMPO_DE_GRAVACAO = 5
 IDIOMA_CORPUS = "portuguese"
-CAMINHO_AUDIO_FALA = "C:/Users/allan/Documents/GIT/AULA IA/assistente virtual lista de compras/temp/"
+CAMINHO_AUDIO_FALA = "C:/Users/allan/Documents/GIT/AULA IA/assistente virtual lista de compras/audios_testes/"
 CONFIGURACAO = "C:/Users/allan/Documents/GIT/AULA IA/assistente virtual lista de compras/config.json"
 SILENCIO_LIMIAR = 500  # Limiar para considerar como silêncio
 TEMPO_MAXIMO = 60  # Limite máximo de captura (segundos)
@@ -39,79 +39,6 @@ def iniciar(dispositivo):
     return assistente_iniciado, processador, modelo, gravador, palavras_de_parada, acoes
 
 
-
-def capturar_fala(gravador):
-    gravacao = gravador.open(format=FORMATO, channels=CANAIS, rate=TAXA_AMOSTRAGEM, input=True, frames_per_buffer=AMOSTRAS)
-
-    print("fale alguma coisa")
-    fala = []
-    inicio_silencio = None  # Reseta o temporizador de silêncio
-    tempo_inicial = time.time()
-    while True:
-        # Captura dados do microfone
-        dados = gravacao.read(AMOSTRAS, exception_on_overflow=False)
-        dados_np = np.frombuffer(dados, dtype=np.int16)
-        
-        # Adiciona ao buffer se não for silêncio e se o tempo máximo não foi atingido
-        if np.abs(dados_np).mean() > SILENCIO_LIMIAR and  time.time() - tempo_inicial < TEMPO_MAXIMO:
-            fala.append(dados)  # Adiciona áudio ao buffer
-            inicio_silencio = None  # Reseta o temporizador de silêncio
-        else:
-            if inicio_silencio is None:
-                inicio_silencio = time.time()  # Marca o início do silêncio
-            elif time.time() - inicio_silencio >= TEMPO_ESPERA_SILENCIO:
-                if fala:
-                    gravacao.stop_stream()
-                    gravacao.close()
-
-                    print("fala capturada")
-
-                    return fala
-
-def gravar_fala(fala):
-    gravado, arquivo = False, f"{CAMINHO_AUDIO_FALA}/{secrets.token_hex(32).lower()}.wav" 
-
-    try:
-        wav = wave.open(arquivo, 'wb')
-        wav.setnchannels(CANAIS)
-        wav.setsampwidth(gravador.get_sample_size(FORMATO))
-        wav.setframerate(TAXA_AMOSTRAGEM)
-        wav.writeframes(b''.join(fala))
-        wav.close()    
-
-        gravado = True
-    except Exception as e:
-        print(f"ocorreu um erro gravando arquivo temporário: {str(e)}")
-
-    return gravado, arquivo
-
-def gravar_fala_arquivo(fala, arquivo):
-    gravado, arquivo = False, f"{CAMINHO_AUDIO_FALA}/{time.time()}-{arquivo.lower()}.wav" 
-
-    try:
-        wav = wave.open(arquivo, 'wb')
-        wav.setnchannels(CANAIS)
-        wav.setsampwidth(gravador.get_sample_size(FORMATO))
-        wav.setframerate(TAXA_AMOSTRAGEM)
-        wav.writeframes(b''.join(fala))
-        wav.close()    
-
-        gravado = True
-    except Exception as e:
-        print(f"ocorreu um erro gravando arquivo temporário: {str(e)}")
-
-    return gravado, arquivo
-def processar_transcricao(transcricao, palavras_de_parada):
-    comando = []
-
-    tokens = word_tokenize(transcricao)
-    for token in tokens:
-        if token not in palavras_de_parada:
-            comando.append(token)
-    
-    return comando
-
-
 def carregar_fala(caminho_audio):
     audio, amostragem = torchaudio.load(caminho_audio)
     if audio.shape[0] > 1:
@@ -121,6 +48,25 @@ def carregar_fala(caminho_audio):
     audio = adaptador_amostragem(audio)
 
     return audio.squeeze()
+
+def gravar_fala_arquivo(fala, arquivo):
+    gravado, arquivo = False, f"{CAMINHO_AUDIO_FALA}/{arquivo.lower()}.wav" 
+
+    try:
+        wav = wave.open(arquivo, 'wb')
+        wav.setnchannels(CANAIS)
+        wav.setsampwidth(gravador.get_sample_size(FORMATO))
+        wav.setframerate(TAXA_AMOSTRAGEM)
+        wav.writeframes(b''.join(fala))
+        wav.close()    
+
+        gravado = True
+    except Exception as e:
+        print(f"ocorreu um erro gravando arquivo temporário: {str(e)}")
+
+    return gravado, arquivo
+
+
 
 
 def transcrever_fala(dispositivo, fala, modelo, processador):
@@ -218,7 +164,8 @@ def capturar_e_transcrever(dispositivo, modelo, processador):
                             audio_bytes = b"".join(buffer_audio)
                             tensor_audio = processar_com_torchaudio(audio_bytes, TAXA_AMOSTRAGEM)
                             texto = transcrever_fala(dispositivo,tensor_audio,modelo,processador)
-                            #gravar_fala_arquivo(buffer_audio,texto)
+                            #DESCOMENTE PARA CRIAR NOVOS AUDIOS DE TESTE
+                            ####gravar_fala_arquivo(buffer_audio,texto)
                             print(f"Você disse: {texto}\n")
                             buffer_audio = []  # Limpa o buffer para a próxima captura
                             return texto
@@ -230,13 +177,16 @@ def capturar_e_transcrever(dispositivo, modelo, processador):
         stream.close()
         gravador.terminate()
         
-def validar_comando(acoes, comando,palavras_de_parada, lista):
+def validar_comando(acoes, comando,palavras_de_parada):
     texto = remover_comando_wake_up(comando)
     comando = separar_comando_e_remover_palavras_parada(texto,palavras_de_parada)
     
     for acao in acoes:
         if acao["comando"] == comando[0]:
-            return executar_acao(acao,get_objeto_comando(texto), lista) 
+            return True, acao, get_objeto_comando(texto)
+        
+    return False, None, None 
+    
     print(f"comando {texto[0]} não reconhecido")
     
     
@@ -264,7 +214,7 @@ def executar_acao(acao,comando, lista):
             return
         case "apagar":
             lista.clear()
-            print(f"a lsita de compras foi apagada")
+            print(f"a lista de compras foi apagada")
             return
         case "criar":
             lista = []
@@ -306,8 +256,9 @@ if __name__ == "__main__":
             comando = capturar_e_transcrever(dispositivo, modelo, processador)
             print(f"ação a ser executada: {comando}")
             print(f"ação a ser executada: {remover_comando_wake_up(comando)}")
-            validar_comando(acoes, comando,palavra_parada, lista_de_compras)
-            
+            valido, acao, objeto =  validar_comando(acoes, comando,palavra_parada)
+            if valido:
+                executar_acao(acao,objeto,lista_de_compras)
             #print(f"atuação a ser executada: {atuacao}")
             #atuar_sobre_lampada(atuacao, porta_lampada)
            
