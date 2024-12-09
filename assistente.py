@@ -1,7 +1,8 @@
 from inicializador_modelos import *
-from transcritor import *
 import numpy as np
 from nltk import word_tokenize, corpus
+import torchaudio
+import torch
 
 import secrets
 import pyaudio
